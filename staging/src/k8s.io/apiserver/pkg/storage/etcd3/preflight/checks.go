@@ -26,21 +26,27 @@ import (
 
 const connectionTimeout = 1 * time.Second
 
+type connection interface {
+	serverReachable(address string) (bool, error)
+	parseServerList(serverList []string) error
+	CheckEtcdServers() (bool, error)
+}
+
 // EtcdConnection holds the Etcd server list
 type EtcdConnection struct {
 	ServerList []string
 }
 
-func (EtcdConnection) serverReachable(connURL *url.URL) bool {
+func (EtcdConnection) serverReachable(connURL *url.URL) (err error) {
 	scheme := connURL.Scheme
 	if scheme == "http" || scheme == "https" || scheme == "tcp" {
 		scheme = "tcp"
 	}
 	if conn, err := net.DialTimeout(scheme, connURL.Host, connectionTimeout); err == nil {
 		defer conn.Close()
-		return true
 	}
-	return false
+
+	return err
 }
 
 func parseServerURI(serverURI string) (*url.URL, error) {
@@ -62,9 +68,9 @@ func (con EtcdConnection) CheckEtcdServers() (done bool, err error) {
 		if err != nil {
 			return false, err
 		}
-		if con.serverReachable(host) {
-			return true, nil
+		if err = con.serverReachable(host); err == nil {
+			return true, err
 		}
 	}
-	return false, nil
+	return false, err
 }

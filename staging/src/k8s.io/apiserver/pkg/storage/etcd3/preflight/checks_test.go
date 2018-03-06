@@ -57,9 +57,7 @@ func TestParseServerURIBad(t *testing.T) {
 
 func TestEtcdConnection(t *testing.T) {
 	etcd := new(EtcdConnection)
-
-	result := etcd.serverReachable(&url.URL{Host: "-not a real network address-", Scheme: "tcp"})
-	if result {
+	if err := etcd.serverReachable(&url.URL{Host: "-not a real network address-", Scheme: "tcp"}); err == nil {
 		t.Fatal("checkConnection should not have succeeded")
 	}
 }
